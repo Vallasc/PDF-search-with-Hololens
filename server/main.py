@@ -1,5 +1,14 @@
-import requests
+import pymongo
+import pdfminer
 
-response = requests.get('https://httpbin.org/ip')
+print("Ciao")
+print(pdfminer.__version__)  
+username = "root"
+password = "arvrlab"
+mongo_client = pymongo.MongoClient('mongodb://%s:%s@127.0.0.1:27017' % (username, password))
+db = mongo_client["ARdatabase"]
+collection = db["pdfs"]
 
-print('Your IP is {0}'.format(response.json()['origin']))
+mydict = { "name": "John" }
+
+x = collection.insert_one(mydict)
