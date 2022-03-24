@@ -7,6 +7,10 @@ name = "pypi"
 requests = "*"
 pymongo = "*"
 "pdfminer.six" = "*"
+pymupdf = "*"
+bottle = "*"
+easyocr = "*"
+opencv-python = "*"
 
 [dev-packages]
 
