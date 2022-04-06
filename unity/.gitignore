@@ -39,7 +39,3 @@ sysinfo.txt
 Icon?
 ehthumbs.db
 Thumbs.db
-
-/Assets/*
-!/Assets/Scenes
-!/Assets/Scenes.meta
