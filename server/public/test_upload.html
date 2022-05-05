@@ -1,0 +1,32 @@
+Select a file: <input id="file" type="file" name="snapshot" />
+<br>
+<br>
+<input id="start" type="button" value="Start OCR" />
+<br>
+<br>
+<div id="result"></div>
+
+<script type="text/javascript">
+
+    document.getElementById("start").onclick = (event) => {
+
+        let input = document.getElementById("file")
+        let file = input.files[0]
+        let data = new FormData()
+        data.append('snapshot', file, file.name)
+
+        fetch("/upload", {
+            method: 'POST',
+            body: data
+        }).then((resp) => {
+            //return resp.json(); // or resp.text() or whatever the server sends
+            resp.text().then((data) => {
+                document.getElementById("result").innerText = data
+            })
+        }).then((body) => {
+            // TODO handle body
+        }).catch((error) => {
+            // TODO handle error
+        })
+    }
+</script>
