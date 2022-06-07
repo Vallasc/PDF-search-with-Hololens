@@ -38,4 +38,4 @@ def do_upload():
     return json.dumps(result, default=convert)
 
 if __name__ == '__main__':
-    run(host='localhost', port=9999)
+    run(host='0.0.0.0', port=9999)
