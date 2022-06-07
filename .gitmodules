@@ -1,3 +1,3 @@
 [submodule "unity"]
 	path = unity
-	url = https://github.com/Vallasc/PDF-search-with-Hololens-unity
+	url = git://github.com/Vallasc/PDF-search-with-Hololens-unity
