@@ -63,7 +63,7 @@ def convert(o):
     if isinstance(o, np.generic): return o.item()
     else: return o
 
-def ocr_file(file_path):
+def ocr_file(file_path, filename):
     results = reader.readtext(file_path, width_ths=0.1)
     index = 0
     out_obj = []
@@ -76,16 +76,15 @@ def ocr_file(file_path):
         img = cv2.imread(file_path)
         top_left = tuple(position[0])
         bottom_right = tuple(position[2])
-        print(top_left)
-        print(bottom_right)
         cropped_image = img[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
         out_image = file_path + str(index) + ".jpg"
+        out_filename = "/imgs/" + filename + str(index) + ".jpg"
         cv2.imwrite(out_image, cropped_image)
         index += 1
 
         out_obj.append({
             "w" : word,
-            "src": out_image
+            "src": out_filename
         })
     return out_obj
 
@@ -97,6 +96,13 @@ def ocr_file(file_path):
 def root():
     return static_file('./public/test_upload.html', root='.')
 
+@route('/imgs/<filename>')
+def serve_imgs(filename):
+    try:
+        return static_file(filename, root = upload_path)
+    except: 
+        print("/imgs/" + filename + " not found")
+
 @route('/upload', method='POST')
 def do_upload():
     upload :FileUpload = request.files.get('snapshot')
@@ -104,10 +110,10 @@ def do_upload():
     # if ext not in ('.png', '.jpg', '.jpeg'):
     #     return "File extension not allowed."
 
-    file = millis()
+    file = str(millis())
     file_path = "{path}/{file}".format(path=upload_path, file=file)
     upload.save(file_path)
-    result = ocr_file(file_path)
+    result = ocr_file(file_path, file)
     return json.dumps(result)
 
 
