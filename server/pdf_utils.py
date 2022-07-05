@@ -23,7 +23,7 @@ class PdfUtils:
         return out
 
     @staticmethod
-    def extract_pages(pdf, destination):
+    def extract_pages(pdf, keywords, destination):
         destination = destination + os.sep + pdf["name"]
         if not os.path.exists(destination):
             os.mkdir(destination)
@@ -50,13 +50,16 @@ class PdfUtils:
             pages.append(out_page)
 
             for w in page.get_text("words"):
+                word = w[4].lower().translate(str.maketrans('', '', string.punctuation))
+                if word not in keywords:
+                    continue
                 word_obj = { 
                     "x0": w[0], 
                     "y0": w[1],
                     "x1": w[2], 
                     "y1": w[3], 
                     # Remove punctuation
-                    "word": w[4].lower().translate(str.maketrans('', '', string.punctuation))
+                    "word": word
                 }
                 if word_obj["word"] == "": continue
                 words.setdefault(word_obj["word"], [])

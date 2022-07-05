@@ -45,8 +45,11 @@ import pymongo
 
 class Database:
 
-    def __init__(self, username, password):
-        self._mongo_client = pymongo.MongoClient('mongodb://%s:%s@127.0.0.1:27017' % (username, password))
+    def __init__(self, username, password, host = "127.0.0.1"):
+        if host == "127.0.0.1" or host == "localhost":
+            self._mongo_client = pymongo.MongoClient('mongodb://%s:%s@%s:27017' % (username, password, host))
+        else:
+            self._mongo_client = pymongo.MongoClient('mongodb+srv://%s:%s@%s/?retryWrites=true&w=majority' % (username, password, host))
         self._db = self._mongo_client["ARdatabase"]
         self._db["pdfs"].create_index('name')
         
