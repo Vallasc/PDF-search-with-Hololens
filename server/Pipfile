@@ -4,9 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "*"
-pymongo = "*"
-"pdfminer.six" = "*"
+requests = "==2.28.1"
+pymongo[tls,srv] = "==4.1.1"
+"pdfminer.six" = "==20220524"
 pymupdf = "==1.19.6"
 bottle = "==0.12.19"
 opencv-python = "==4.5.4.60"
