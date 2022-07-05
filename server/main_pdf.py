@@ -16,11 +16,13 @@ if not os.path.exists(destination):
 
 pdfs = PdfUtils.list_pdfs(pdf_dir)
 
-user = "root"
-pasword = "arvrlab"
-db = Database(user, pasword)
+db_user = "root"
+db_pasword = "arvrlab"
+
+db = Database(db_user, db_pasword)
 db.drop_db()
 
+######################## Init DB ########################
 # insert pdf into db
 for pdf in pdfs.values():
     word_pages = PdfUtils.extract_pages(pdf, destination)
@@ -30,7 +32,7 @@ for pdf in pdfs.values():
         db.push_keyword(word, pdf["words"][word])
 
 
-# Web server
+######################## Web server ########################
 @route('/pdfs')
 def get_pdfs():
     if "keyword" in request.query:
@@ -58,6 +60,3 @@ def serve_pdfs(dir, filename):
 
 
 run(host='localhost', port=9090)
-
-
-# todo pulire hello,
