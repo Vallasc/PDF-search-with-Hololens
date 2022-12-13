@@ -1,5 +1,3 @@
-import pymongo
-
 # Pdf = {
 #   _id: string
 #   name: string
@@ -27,6 +25,7 @@ import pymongo
 #   page: Page
 # }
 
+# TODO
 # Keyword = {
 #   _id: string
 #   word: string
@@ -43,8 +42,12 @@ import pymongo
 #   pdf_id: string
 # }
 
-class Database:
+import pymongo
+import os
+import json
 
+class Database:
+    db_path = "./pdf_search.db"
     def __init__(self, username, password, host = "127.0.0.1"):
         if host == "127.0.0.1" or host == "localhost":
             self._mongo_client = pymongo.MongoClient('mongodb://%s:%s@%s:27017' % (username, password, host))
@@ -52,10 +55,29 @@ class Database:
             self._mongo_client = pymongo.MongoClient('mongodb+srv://%s:%s@%s/?retryWrites=true&w=majority' % (username, password, host))
         self._db = self._mongo_client["ARdatabase"]
         self._db["pdfs"].create_index('name')
+        self._db_type = "mongo"
+
+    def __init__(self):
+        self._db_type = "file"
+        if os.path.exists(db_path):
+            with open(db_path, 'rb') as fp:
+                self._db_file = json.load(fp)
+        else:
+            self._db_file =  []
+
+    def close(self):
+        f = open(db_path)
+            self._db_file = json.load(f)
+        with open(db_path, 'w') as fp:
+            json.dump(self._db_file, fp)
+
         
     def drop_db(self):
-        self._db["pdfs"].drop()
-        self._db["keywords"].drop()
+        if self._db_type == "mongo":
+            self._db["pdfs"].drop()
+            self._db["keywords"].drop()
+        else:
+
 
     def insert_pdf(self, pdf):
         pdf["_id"] = pdf["name"]
