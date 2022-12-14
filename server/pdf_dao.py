@@ -12,6 +12,8 @@
 #   url: string
 # }
 
+
+
 # Word = {
 #   x0: flaot
 #   y0: flaot
@@ -59,16 +61,14 @@ class Database:
 
     def __init__(self):
         self._db_type = "file"
-        if os.path.exists(db_path):
-            with open(db_path, 'rb') as fp:
+        if os.path.exists(self.db_path):
+            with open(self.db_path, 'rb') as fp:
                 self._db_file = json.load(fp)
         else:
-            self._db_file =  []
+            self._db_file =  { "pdfs": {},  "keywords": {}}
 
     def close(self):
-        f = open(db_path)
-            self._db_file = json.load(f)
-        with open(db_path, 'w') as fp:
+        with open(self.db_path, 'w') as fp:
             json.dump(self._db_file, fp)
 
         
@@ -77,37 +77,50 @@ class Database:
             self._db["pdfs"].drop()
             self._db["keywords"].drop()
         else:
-
+            self._db_file =  { "pdfs": {},  "keywords": {}}
+            
 
     def insert_pdf(self, pdf):
         pdf["_id"] = pdf["name"]
-        collection = self._db["pdfs"]
-        try:
-            collection.insert_one(pdf)
-        except:
-            print("Error inserting pdf " + pdf["name"])
+        if self._db_type == "mongo":
+            collection = self._db["pdfs"]
+            try:
+                collection.insert_one(pdf)
+            except:
+                print("Error inserting pdf " + pdf["name"])
+        else:
+            self._db_file["pdfs"][pdf["name"]] = pdf
+
 
     def get_pdf(self, name):
-        collection = self._db["pdfs"]
-        return collection.find_one({'_id': name})
+        if self._db_type == "mongo":
+            collection = self._db["pdfs"]
+            return collection.find_one({'_id': name})
+        else:
+            return self._db_file["pdfs"][name]
 
     def get_all_pdfs(self):
-        collection = self._db["pdfs"]
-        return collection.find({})
+        if self._db_type == "mongo":
+            collection = self._db["pdfs"]
+            return collection.find({})
+        else:
+            return self._db_file["pdfs"].values()
+
 
     def push_keyword(self, word, pages):
-        collection = self._db["keywords"]
-        _id = word
-        try:
-            collection.update_one({'_id': _id}, {'$push': {'pages': {'$each': pages}}, 
-                                                '$set': {'word': word, '_id': _id}}, upsert = True)
-        except Exception as e:
-            print(e)
+        if self._db_type == "mongo":
+            collection = self._db["keywords"]
+            try:
+                collection.update_one({'_id': word}, {'$push': {'pages': {'$each': pages}}, '$set': {'word': word, '_id': word}}, upsert = True)
+            except Exception as e:
+                print(e)
+        else:
+            self._db_file["keywords"][word] = { "word": word, "pages": pages}
+
 
     def get_keyword_page(self, word):
         collection = self._db["keywords"]
-        _id = word
         try:
-            return collection.find({'_id': _id})
+            return collection.find({'_id': word})
         except Exception as e:
             print(e)
