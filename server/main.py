@@ -14,18 +14,19 @@ from pdf_utils import PdfUtils
 parser = argparse.ArgumentParser(description='PDF search with Hololens')
 parser.add_argument('--pdf_dir', type=str, help='Pdf directory')
 parser.add_argument('--keywords', type=str, help='Keywords file')
+parser.add_argument('--output', type=str, help='Output directory')
+parser.add_argument('--upload', type=str, help='Upload directory')
 
 args = parser.parse_args()
 print(args)
 
 pdf_dir = args.pdf_dir if args.pdf_dir else "./"
 keywords_file = args.keywords if args.keywords else "./keywords.txt"
+out_dir = args.output if args.output else "./processed_pdfs"
+upload_path = args.upload if args.upload else "./tmp"
 
 with open(keywords_file, encoding = 'utf-8') as f:
     keywords = f.readlines()
-
-out_dir = "./processed_pdfs"
-upload_path = "./tmp"
 
 db_host = "cluster0.zwdtk.mongodb.net"
 db_user = "arvrlab"

@@ -12,8 +12,6 @@
 #   url: string
 # }
 
-
-
 # Word = {
 #   x0: flaot
 #   y0: flaot
