@@ -1,17 +1,42 @@
 # Pdf = {
 #   _id: string
 #   name: string
+#   path: string
+#   numPages: number
 #   pages: list<Page>
-#   words: dict<string, list<WordPage>>
 # }
-
 # Page = {
 #   number: int
 #   pdfId: string
 #   path: string
 #   url: string
 # }
+# PageImage = {
+#   img: string
+#   width: int
+#   height: int
+# }
 
+
+# Keyword = {
+#   _id: string
+#   word: string
+#   pdfs: dict<pdfId, PdfKeyword>
+# }
+# PdfKeyword = {
+#   _id: string
+#   name: string
+#   path: string
+#   numOccKeyword: number TODO
+#   pages: list<PageKeyword>
+# }
+# PageKeyword = {
+#     number: int
+#     pdfId: string
+#     path: string
+#     url: string
+#     keywords: list<Word>
+# }
 # Word = {
 #   x0: flaot
 #   y0: flaot
@@ -20,23 +45,11 @@
 #   word: string
 # }
 
-# WordPage = {
-#   word: Word
-#   page: Page
-# }
-
-# TODO
-# Keyword = {
-#   _id: string
-#   word: string
-#   pages: set<Page>
-# }
 
 # Favorites = {
 #   _id: string
 #   pdf_id: string
 # }
-
 # LastSeen = {
 #   _id: string
 #   pdf_id: string
@@ -78,8 +91,7 @@ class Database:
             self._db_file =  { "pdfs": {},  "keywords": {}}
             
 
-    def insert_pdf(self, pdf):
-        pdf["_id"] = pdf["name"]
+    def insert_one_pdf(self, pdf):
         if self._db_type == "mongo":
             collection = self._db["pdfs"]
             try:
@@ -87,38 +99,58 @@ class Database:
             except:
                 print("Error inserting pdf " + pdf["name"])
         else:
-            self._db_file["pdfs"][pdf["name"]] = pdf
+            self._db_file["pdfs"][pdf["_id"]] = pdf
 
-
-    def get_pdf(self, name):
+    def insert_many_pdfs(self, pdfs):
         if self._db_type == "mongo":
             collection = self._db["pdfs"]
-            return collection.find_one({'_id': name})
+            try:
+                collection.insert_many(pdfs)
+            except:
+                print("Error inserting pdfs")
         else:
-            return self._db_file["pdfs"][name]
+            for pdf in pdfs:
+                if pdf["_id"] not in self._db_file["pdfs"]:
+                    self._db_file["pdfs"][pdf["_id"]] = pdf
+
+    def get_pdf(self, id):
+        if self._db_type == "mongo":
+            collection = self._db["pdfs"]
+            return collection.find_one({'_id': id})
+        else:
+            return self._db_file["pdfs"][id]
 
     def get_all_pdfs(self):
         if self._db_type == "mongo":
             collection = self._db["pdfs"]
-            return collection.find({})
+            return list(collection.find({}))
         else:
-            return self._db_file["pdfs"].values()
+            return list(self._db_file["pdfs"].values())
 
 
-    def push_keyword(self, word, pages):
+    def insert_many_keywords(self, keywords):
         if self._db_type == "mongo":
             collection = self._db["keywords"]
             try:
-                collection.update_one({'_id': word}, {'$push': {'pages': {'$each': pages}}, '$set': {'word': word, '_id': word}}, upsert = True)
+                collection.insert_many(keywords)
             except Exception as e:
                 print(e)
         else:
-            self._db_file["keywords"][word] = { "word": word, "pages": pages}
+            for keyword in keywords:
+                if keyword["_id"] not in self._db_file["keywords"]:
+                    self._db_file["keywords"][keyword["_id"]] = keyword
+            self._db_file["keywords"][keyword["_id"]] = keyword
 
+    def get_keyword(self, keyword_id):
+        if self._db_type == "mongo":
+            collection = self._db["keywords"]
+            return collection.find_one({'_id': keyword_id})
+        else:
+            return self._db_file["keywords"][keyword_id]
 
-    def get_keyword_page(self, word):
-        collection = self._db["keywords"]
-        try:
-            return collection.find({'_id': word})
-        except Exception as e:
-            print(e)
+    def get_all_keywords(self):
+        if self._db_type == "mongo":
+            collection = self._db["keywords"]
+            return list(collection.find({}))
+        else:
+            return list(self._db_file["keywords"].values())
