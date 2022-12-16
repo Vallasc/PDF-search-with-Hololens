@@ -1,9 +1,17 @@
 import os
 import fitz
-import utils
 import string
+import base64
+import json
+from PIL import Image
+from io import BytesIO
+
 
 class PdfUtils:
+
+    @staticmethod
+    def absolutePath(path):
+        return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
 
     # List all pdfs in the directory
     @staticmethod
@@ -16,10 +24,9 @@ class PdfUtils:
                 base_name = os.path.basename(path).replace(" ", '_')
                 name = os.path.splitext(base_name)[0]
                 out[name] = { 
-                    "path" : utils.absolutePath(file_path), # ./foo/bar/file.pdf
+                    "path" : PdfUtils.absolutePath(file_path), # ./foo/bar/file.pdf
                     "name" : name, # file
-                    "id" : name,
-                    "dirPath" : utils.absolutePath(dir_path), # ./foo/bar
+                    "_id" : name
                 }
         return out
 
@@ -28,20 +35,24 @@ class PdfUtils:
         destination = destination + os.sep + pdf["name"]
         if not os.path.exists(destination):
             os.mkdir(destination)
-        # word_pages = {}
-        pages = []
-        # word is a dict
-        # pdfs is a dict
-        doc = fitz.open(pdf["path"])  
+        pdf = pdf.copy()
+        pdf["pages"] = []
+        doc = fitz.open(pdf["path"])
+        num_pages = 0
         # foreach page in pdf
         for idx, page in enumerate(doc):
-            pix = page.get_pixmap(dpi=300) 
+            pix = page.get_pixmap(dpi=100) 
             the_page_bytes = pix.pil_tobytes(format="JPEG")
-            page_file = "page-%s.jpg" % idx
-            page_path = utils.absolutePath(destination +  os.sep + page_file)
-            # Save page image
-            with open(page_path, "wb") as outf:
-                outf.write(the_page_bytes)
+            page_file = "page-%s.json" % idx
+            page_path = PdfUtils.absolutePath(destination +  os.sep + page_file)
+            # Save page image as json and base64
+            image_bytes = BytesIO(the_page_bytes)
+            image = Image.open(image_bytes)
+            width, height = image.size
+            img_str = base64.b64encode(image_bytes.getvalue())
+            out = { "img": img_str.decode("utf-8") , "width": width, "height": height}
+            with open(page_path, "w") as outf:
+                json.dump(out, outf)
 
             # Create page object
             out_page = {}
@@ -49,7 +60,8 @@ class PdfUtils:
             out_page["pdfId"] = pdf["name"]
             out_page["path"] = page_path
             out_page["url"] = "/pdfs/%s/%s" % (pdf["name"], page_file)
-            pages.append(out_page)
+            # out_page["keywords"] = []
+            # pdf["pages"].append(out_page)
 
             for w in page.get_text("words"):
                 word = w[4].lower().translate(str.maketrans('', '', string.punctuation))
@@ -66,22 +78,31 @@ class PdfUtils:
                 if word_obj["word"] == "": continue
 
                 # Create word if not exists
-                if word_obj["word"] not in words:
-                    words[word] = {}
+                if word not in words:
+                    words[word] = {
+                        "_id": word,
+                        "word": word,
+                        "pdfs": {}
+                    }
+                word_pdfs = words[word]
                 # Create pdf if not exists
-                if pdf["id"] not in words[word]:
-                    words[word][pdf["id"]] = {}
-                # Create page if not exists
-                if idx not in words[word][pdf["id"]]:
-                    words[word][pdf["id"]][idx] = out_page.copy()
-                # Create list of bounding boxes
-                if "boxes" not in words[word][pdf["id"]][idx]:
-                    words[word][pdf["id"]][idx]["boxes"] = []
-                # Append word bounding box
-                words[word][pdf["id"]][idx]["boxes"].append(word_obj)
+                if pdf["_id"] not in word_pdfs["pdfs"]:
+                    word_pdfs["pdfs"][pdf["_id"]] = pdf.copy()
+                    word_pdfs["pdfs"][pdf["_id"]]["numOccKeyword"] = 0
+                word_pdfs["pdfs"][pdf["_id"]]["numOccKeyword"] += 1
 
-        # create pdf key if not exists
-        if pdf["id"] not in pdfs:
-            pdfs[pdf["id"]] = pdf.copy()
-            pdfs[pdf["id"]]["pages"] = pages
+                word_pdf_pages = word_pdfs["pdfs"][pdf["_id"]]["pages"]
+
+                filtered = [p for p in word_pdf_pages if p["number"] == idx]
+                if len(filtered) == 0:
+                    tmp = out_page.copy()
+                    tmp["keywords"] = [word_obj]
+                    word_pdf_pages.append(tmp)
+                else:
+                    filtered[0]["keywords"].append(word_obj)
+            num_pages += 1
+            pdf["pages"].append(out_page)
+            
+        pdf["numPages"] = num_pages
+        pdfs[pdf["_id"]] = pdf
 
