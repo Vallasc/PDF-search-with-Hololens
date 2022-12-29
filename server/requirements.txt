@@ -1,0 +1,6 @@
+pymongo[tls,srv]==4.1.1
+pymupdf==1.19.6
+flask==2.2.2
+pyopenssl==22.1.0
+easyocr==1.4.1
+editdistance==0.6.2
