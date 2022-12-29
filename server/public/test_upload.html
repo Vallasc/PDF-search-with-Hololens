@@ -8,25 +8,31 @@ Select a file: <input id="file" type="file" name="snapshot" />
 
 <script type="text/javascript">
 
+    const toBase64 = file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    })
+
     document.getElementById("start").onclick = (event) => {
 
         let input = document.getElementById("file")
-        let file = input.files[0]
         let data = new FormData()
-        data.append('snapshot', file, file.name)
 
-        fetch("/upload", {
-            method: 'POST',
-            body: data
-        }).then((resp) => {
-            //return resp.json(); // or resp.text() or whatever the server sends
-            resp.text().then((data) => {
-                document.getElementById("result").innerText = data
+        toBase64(input.files[0]).then((img) =>{
+            console.log(img.split('base64,')[1])
+            data.append('snapshot', img.split('base64,')[1])
+            data.append('request_index', '1')
+            fetch("/upload", {
+                method: 'POST',
+                body: data
+            }).then((resp) => {
+                //return resp.json(); // or resp.text() or whatever the server sends
+                resp.text().then((data) => {
+                    document.getElementById("result").innerText = data
+                })
             })
-        }).then((body) => {
-            // TODO handle body
-        }).catch((error) => {
-            // TODO handle error
         })
     }
 </script>
