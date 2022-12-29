@@ -1,41 +1,59 @@
+# pip install pyopenssl
+# python main_ocr.py --keywords ../sample_data/keywords.txt
 import easyocr
-import os
-import json
-import time as time_
-import numpy as np
+import argparse
+from PIL import Image
+from io import BytesIO
+import base64
+from pdf_utils import PdfUtils
+from flask import Flask, send_from_directory, request
+import editdistance
 
-from bottle import route, request, run, static_file, FileUpload
+parser = argparse.ArgumentParser(description='PDF search with Hololens OCR server')
+parser.add_argument('--keywords', type=str, help='Keywords file')
+parser.add_argument('--tmp', type=str, help='Tmp directory')
+parser.add_argument('--gpu', default=False, action=argparse.BooleanOptionalAction, help='Enable GPU acceleration')
 
-reader = easyocr.Reader(['en'])
+args = parser.parse_args()
+reader = easyocr.Reader(['en', 'it'], gpu=args.gpu)
 
+with open(args.keywords, encoding = 'utf-8') as f: 
+    keywords = PdfUtils.sanitize_word(f.read()).splitlines()
 
-def millis():
-    return int(round(time_.time() * 1000))
-    
-def convert(o):
-    if isinstance(o, np.generic): return o.item()  
-    else: return o
+app = Flask(__name__)
 
-@route('/')
-def root():
-    return static_file('./public/test_upload.html', root='.')
+@app.route('/test')
+def get_page():
+    return send_from_directory('./public', 'test_upload.html')
 
-
-@route('/upload', method='POST')
+@app.route('/upload', methods = ['POST'])
 def do_upload():
-    upload :FileUpload = request.files.get('snapshot')
-    name, ext = os.path.splitext(upload.filename)
-    # if ext not in ('.png', '.jpg', '.jpeg'):
-    #     return "File extension not allowed."
+    base64_img = request.form['snapshot']
+    img_bytes = BytesIO(base64.b64decode(base64_img))
+    # img_bytes = BytesIO()
+    # with Image.open(BytesIO(base64.b64decode(base64_img))) as image:
+    #     image.thumbnail((800, 800))
+    #     image.save(img_bytes, format="PNG")
+    result = reader.readtext(img_bytes.getvalue())
+    out_keywords = []
+    for word in result:
+        sanitized = PdfUtils.sanitize_word(word[1])
+        for keyword in keywords:
+            dist = editdistance.eval(sanitized, keyword)
+            if dist < 3 and word[2] > 0.6 and keyword not in out_keywords:
+                out_keywords.append(keyword)
+    return {
+        'keywords': out_keywords,
+        'request_index': request.form['request_index']
+    }, 200
 
-    save_path = "./tmp"
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
+@app.route('/test_upload', methods = ['POST'])
+def do_test_upload():
+    return {
+        'keywords': ['nice', 'try'],
+        'request_index': request.form['request_index']
+    }, 200
 
-    file_path = "{path}/{file}".format(path=save_path, file=millis())
-    upload.save(file_path)
-    result = reader.readtext(file_path)
-    return json.dumps(result, default=convert)
 
-if __name__ == '__main__':
-    run(host='0.0.0.0', port=9999)
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8574, ssl_context='adhoc')
