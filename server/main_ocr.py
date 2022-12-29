@@ -1,5 +1,6 @@
 # pip install pyopenssl
 # python main_ocr.py --keywords ../sample_data/keywords.txt
+
 import easyocr
 import argparse
 from PIL import Image
