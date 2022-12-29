@@ -8,11 +8,13 @@
 # Page = {
 #   number: int
 #   pdfId: string
-#   path: string
-#   url: string
+#   path: string        // Local file system path
+#   url: string         // Page image url
+#   base64Thumbnail: string
 # }
 # PageImage = {
 #   img: string
+#   thumbnail: string
 #   width: int
 #   height: int
 # }
@@ -27,7 +29,7 @@
 #   _id: string
 #   name: string
 #   path: string
-#   numOccKeyword: number TODO
+#   numOccKeyword: number
 #   pages: list<PageKeyword>
 # }
 # PageKeyword = {
@@ -139,7 +141,7 @@ class Database:
             for keyword in keywords:
                 if keyword["_id"] not in self._db_file["keywords"]:
                     self._db_file["keywords"][keyword["_id"]] = keyword
-            self._db_file["keywords"][keyword["_id"]] = keyword
+                self._db_file["keywords"][keyword["_id"]] = keyword
 
     def get_keyword(self, keyword_id):
         if self._db_type == "mongo":
