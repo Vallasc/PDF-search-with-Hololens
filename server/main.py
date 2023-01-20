@@ -1,4 +1,5 @@
 # pip install pyopenssl
+# pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
 # python main.py --keywords ../sample_data/keywords.txt --pdf_dir ../sample_data --output ../out 
 
 from flask import Flask, send_from_directory, request
@@ -63,6 +64,11 @@ def get_pdfs():
                     with open(page['path'], encoding = 'utf-8') as f:
                         data = json.load(f)
                         page['thumbnail'] = data['thumbnail']
+                        page['thumbnailWidth'] = data['width']
+                        page['thumbnailHeight'] = data['height']
+                    del page['path']
+                    del page['keywords']
+                del tmp_pdf['path']
                 out_pdfs.append(tmp_pdf)
             # return json.dumps(db.get_keyword(keyword))
             return {
@@ -73,7 +79,21 @@ def get_pdfs():
             return "{}", 404
     else:
         try:
-            return json.dumps(db.get_all_pdfs())
+            out_pdfs = []
+            for pdf in db.get_all_pdfs():
+                tmp_pdf = deepcopy(pdf)
+                del tmp_pdf['path']
+                for page in tmp_pdf['pages']:
+                    with open(page['path'], encoding = 'utf-8') as f:
+                        data = json.load(f)
+                        page['thumbnail'] = data['thumbnail']
+                        page['thumbnailWidth'] = data['width']
+                        page['thumbnailHeight'] = data['height']
+                    del page['path']
+                out_pdfs.append(tmp_pdf)
+            return json.dumps({
+                'pdfs': out_pdfs
+            }), 200
         except Exception as e:
             print(e) 
 

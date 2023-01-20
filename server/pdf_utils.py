@@ -60,10 +60,9 @@ class PdfUtils:
         # foreach page in pdf
         for idx, page in enumerate(doc):
             real_page_size = (page.rect.width, page.rect.height)
-            pix = page.get_pixmap(dpi=100) 
+            pix = page.get_pixmap(dpi=72) 
             the_page_bytes = pix.pil_tobytes(format="JPEG")
-            page_file = "page-%s.json" % idx
-            page_path = PdfUtils.absolutePath(destination +  os.sep + page_file)
+            page_path = PdfUtils.absolutePath(destination +  os.sep + f"page-{idx}.json")
             # Save page image as json and base64
             image_bytes = BytesIO(the_page_bytes)
             with Image.open(BytesIO(the_page_bytes)) as image:
@@ -72,7 +71,7 @@ class PdfUtils:
                 img_str = base64.b64encode(image_bytes.getvalue()).decode("utf-8")
                 # Save thumbnail of page
                 thumbnail_bytes = BytesIO()
-                image.thumbnail((300, 300))
+                image.thumbnail((100, 100))
                 image.save(thumbnail_bytes, format="JPEG")
             thumbnail_str = base64.b64encode(thumbnail_bytes.getvalue()).decode("utf-8")
             out = { 
@@ -81,6 +80,11 @@ class PdfUtils:
                 "width": image_size[0], 
                 "height": image_size[1]
             }
+            if idx == 0:
+                pdf['thumbnail'] = thumbnail_str
+                pdf['thumbnailWidth'] = image_size[0]
+                pdf['thumbnailHeight'] = image_size[1]
+
             with open(page_path, "w") as outf:
                 json.dump(out, outf)
 
@@ -89,7 +93,7 @@ class PdfUtils:
             out_page["number"] = idx
             out_page["pdfId"] = pdf["name"]
             out_page["path"] = page_path
-            out_page["url"] = "/pdfs/%s/%s" % (pdf["name"], page_file)
+            out_page["url"] = "/pdfs/%s/%s" % (pdf["name"], idx)
             for w in page.get_text("words"):
                 word = PdfUtils.sanitize_word(w[4])
                 if word not in keywords:

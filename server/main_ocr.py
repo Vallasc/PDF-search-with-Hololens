@@ -43,6 +43,7 @@ def do_upload():
             dist = editdistance.eval(sanitized, keyword)
             if dist < 3 and word[2] > 0.6 and keyword not in out_keywords:
                 out_keywords.append(keyword)
+    print(out_keywords)
     return {
         'keywords': out_keywords,
         'request_index': request.form['request_index']
