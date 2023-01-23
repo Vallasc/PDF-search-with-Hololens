@@ -133,5 +133,7 @@ class PdfUtils:
             pdf["pages"].append(out_page)
             
         pdf["numPages"] = num_pages
+        pdf["isFav"] = False
+        pdf["numVisit"] = 0
         pdfs[pdf["_id"]] = pdf
 

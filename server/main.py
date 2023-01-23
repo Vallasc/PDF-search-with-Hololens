@@ -51,14 +51,13 @@ app = Flask(__name__)
 def get_pdfs():
     keyword = request.args.get('keyword')
     if keyword is not None:
+        keyword = PdfUtils.sanitize_word(keyword)
+        result_pdfs = db.get_keyword(keyword)['pdfs']
+    else:
+        result_pdfs = db.get_all_pdfs()
+        out_pdfs = []
         try:
-            # TODO
-            # Add sorting type ['most_viewed', 'favourites', 'more_occurencies']
-            # Add max_results
-            keyword = PdfUtils.sanitize_word(keyword)
-            result_pdfs = db.get_keyword(keyword)['pdfs']
-            out_pdfs = []
-            for pdf in result_pdfs.values():
+            for pdf in result_pdfs:
                 tmp_pdf = deepcopy(pdf)
                 for page in tmp_pdf['pages']:
                     with open(page['path'], encoding = 'utf-8') as f:
@@ -67,38 +66,31 @@ def get_pdfs():
                         page['thumbnailWidth'] = data['width']
                         page['thumbnailHeight'] = data['height']
                     del page['path']
-                    del page['keywords']
+                    try:
+                        del page['keywords']
+                    except:
+                        pass
                 del tmp_pdf['path']
                 out_pdfs.append(tmp_pdf)
-            # return json.dumps(db.get_keyword(keyword))
+                if "isFav" not in pdf:
+                    _pdf = db.get_pdf(pdf["_id"])
+                    pdf["isFav"] = _pdf["isFav"]
+                    pdf["numVisit"] = _pdf["numVisit"]
             return {
                 'pdfs': out_pdfs
             }, 200
         except Exception as e:
             print(e) 
             return "{}", 404
-    else:
-        try:
-            out_pdfs = []
-            for pdf in db.get_all_pdfs():
-                tmp_pdf = deepcopy(pdf)
-                del tmp_pdf['path']
-                for page in tmp_pdf['pages']:
-                    with open(page['path'], encoding = 'utf-8') as f:
-                        data = json.load(f)
-                        page['thumbnail'] = data['thumbnail']
-                        page['thumbnailWidth'] = data['width']
-                        page['thumbnailHeight'] = data['height']
-                    del page['path']
-                out_pdfs.append(tmp_pdf)
-            return json.dumps({
-                'pdfs': out_pdfs
-            }), 200
-        except Exception as e:
-            print(e) 
+        
 
 @app.route('/pdfs/<string:pdf>')
 def get_pdf(pdf):
+    visit = request.args.get('visit')
+    if visit is not None:
+        _pdf = db.get_pdf(pdf)
+        _pdf["numVisit"] += 1
+        db.update_pdf(_pdf)
     try:
         return json.dumps(db.get_pdf(pdf))
     except Exception as e:
@@ -118,6 +110,21 @@ def get_page(pdf, page):
             return "{}", 404 
     else:
         return send_from_directory(f"{args.output}/{pdf}", f"page-{page}.json")
+
+
+@app.route('/favs/<string:pdf>', methods = ['POST'])
+def post_favourites(pdf):
+    value = request.form['value']
+    if value is not None:
+        try:
+            _pdf = db.get_pdf(pdf)
+            _pdf["isFav"] = bool(value)
+            db.update_pdf(_pdf)
+            return "{}", 200
+        except Exception as e:
+            print(e) 
+            return "{}", 404
+    return "{}", 400
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8573, ssl_context='adhoc')

@@ -4,6 +4,8 @@
 #   path: string
 #   numPages: number
 #   pages: list<Page>
+#   isFav: bool
+#   numVisit: number
 # }
 # Page = {
 #   number: int
@@ -48,15 +50,6 @@
 # }
 
 
-# Favorites = {
-#   _id: string
-#   pdf_id: string
-# }
-# LastSeen = {
-#   _id: string
-#   pdf_id: string
-# }
-
 import pymongo
 import os
 import json
@@ -69,7 +62,7 @@ class Database:
         else:
             self._mongo_client = pymongo.MongoClient('mongodb+srv://%s:%s@%s/?retryWrites=true&w=majority' % (username, password, host))
         self._db = self._mongo_client["ARdatabase"]
-        self._db["pdfs"].create_index('name')
+        # self._db["pdfs"].create_index('name')
         self._db_type = "mongo"
 
     def __init__(self):
@@ -95,9 +88,9 @@ class Database:
 
     def insert_one_pdf(self, pdf):
         if self._db_type == "mongo":
-            collection = self._db["pdfs"]
+            pdfs = self._db["pdfs"]
             try:
-                collection.insert_one(pdf)
+                pdfs.insert_one(pdf)
             except:
                 print("Error inserting pdf " + pdf["name"])
         else:
@@ -105,9 +98,9 @@ class Database:
 
     def insert_many_pdfs(self, pdfs):
         if self._db_type == "mongo":
-            collection = self._db["pdfs"]
+            pdfs = self._db["pdfs"]
             try:
-                collection.insert_many(pdfs)
+                pdfs.insert_many(pdfs)
             except:
                 print("Error inserting pdfs")
         else:
@@ -121,6 +114,17 @@ class Database:
             return collection.find_one({'_id': id})
         else:
             return self._db_file["pdfs"][id]
+        
+    def update_pdf(self, pdf):
+        if self._db_type == "mongo":
+            newPdfValues = { "$set": { "isFav": pdf["isFav"], "numVisit": pdf["numVisit"]  } }
+            query = { "_id": pdf["_id"] }
+            collection = self._db["pdfs"]
+            return collection.update_one(query, newPdfValues)
+        else:
+            self._db_file["pdfs"][pdf["_id"]]["isFav"] = pdf["isFav"]
+            self._db_file["pdfs"][pdf["_id"]]["numVisit"] = pdf["numVisit"]
+            return True
 
     def get_all_pdfs(self):
         if self._db_type == "mongo":
