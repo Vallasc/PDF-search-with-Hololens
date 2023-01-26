@@ -2,6 +2,7 @@
 # pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
 # python main.py --keywords ../sample_data/keywords.txt --pdf_dir ../sample_data --output ../out 
 
+import traceback
 from flask import Flask, send_from_directory, request
 import os
 import argparse
@@ -52,36 +53,37 @@ def get_pdfs():
     keyword = request.args.get('keyword')
     if keyword is not None:
         keyword = PdfUtils.sanitize_word(keyword)
-        result_pdfs = db.get_keyword(keyword)['pdfs']
+        result_pdfs = db.get_keyword(keyword)["pdfs"].values()
     else:
         result_pdfs = db.get_all_pdfs()
-        out_pdfs = []
-        try:
-            for pdf in result_pdfs:
-                tmp_pdf = deepcopy(pdf)
-                for page in tmp_pdf['pages']:
-                    with open(page['path'], encoding = 'utf-8') as f:
-                        data = json.load(f)
-                        page['thumbnail'] = data['thumbnail']
-                        page['thumbnailWidth'] = data['width']
-                        page['thumbnailHeight'] = data['height']
-                    del page['path']
-                    try:
-                        del page['keywords']
-                    except:
-                        pass
-                del tmp_pdf['path']
-                out_pdfs.append(tmp_pdf)
-                if "isFav" not in pdf:
-                    _pdf = db.get_pdf(pdf["_id"])
-                    pdf["isFav"] = _pdf["isFav"]
-                    pdf["numVisit"] = _pdf["numVisit"]
-            return {
-                'pdfs': out_pdfs
-            }, 200
-        except Exception as e:
-            print(e) 
-            return "{}", 404
+    out_pdfs = []
+    print(result_pdfs)
+    try:
+        for pdf in result_pdfs:
+            tmp_pdf = deepcopy(pdf)
+            for page in tmp_pdf['pages']:
+                with open(page['path'], encoding = 'utf-8') as f:
+                    data = json.load(f)
+                    page['thumbnail'] = data['thumbnail']
+                    page['thumbnailWidth'] = data['width']
+                    page['thumbnailHeight'] = data['height']
+                del page['path']
+                try:
+                    del page['keywords']
+                except:
+                    pass
+            del tmp_pdf['path']
+            out_pdfs.append(tmp_pdf)
+            if "isFav" not in pdf:
+                _pdf = db.get_pdf(pdf["_id"])
+                pdf["isFav"] = _pdf["isFav"]
+                pdf["numVisit"] = _pdf["numVisit"]
+        return {
+            'pdfs': out_pdfs
+        }, 200
+    except Exception as e:
+        traceback.print_exc()
+        return "{}", 404
         
 
 @app.route('/pdfs/<string:pdf>')
