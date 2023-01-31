@@ -1,5 +1,4 @@
 # pip install pyopenssl
-# pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
 # python main.py --keywords ../sample_data/keywords.txt --pdf_dir ../sample_data --output ../out 
 
 import traceback
@@ -51,10 +50,10 @@ app = Flask(__name__)
 @app.route('/pdfs')
 def get_pdfs():
     keyword = request.args.get('keyword')
-    fav = request.args.get('favFilter') is not None 
-    moreOcc = request.args.get('moreOcc') is not None
-    mostView = request.args.get('mostViewed') is not None
-    limit = 30 if request.args.get('limit') is None else request.args.get('limit')
+    fav = True if request.args.get('favFilter') == "True" is not None else False
+    moreOcc = True if request.args.get('moreOcc') == "True" is not None else False
+    mostView = True if request.args.get('mostViewed') == "True" is not None else False
+    limit = int(request.args.get('limit')) if request.args.get('limit') is not None else 30
     if keyword is not None:
         keyword = PdfUtils.sanitize_word(keyword)
         result_pdfs = db.get_keyword(keyword)["pdfs"].values()
@@ -63,13 +62,14 @@ def get_pdfs():
     try:
         out_pdfs = PdfUtils.hydratate_pdfs(result_pdfs, db)
         if moreOcc:
-            out_pdfs.sort( lambda e : e["numOccKeyword"])
+            out_pdfs.sort( key =  lambda e : e["numOccKeyword"])
         elif mostView:
-            out_pdfs.sort( lambda e : e["numVisit"])
+            out_pdfs.sort( key = lambda e : e["numVisit"])
+        print(request.args.get('favFilter'))
+        print(bool(request.args.get('favFilter')))
         if fav:
-            out_pdfs = filter(out_pdfs, lambda e : e["isFav"] == True)
+            out_pdfs = list(filter(lambda e : e["isFav"], out_pdfs))
         out_pdfs = out_pdfs[0:limit]
-        print(out_pdfs)
         return {
             'pdfs': out_pdfs
         }, 200

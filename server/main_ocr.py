@@ -1,4 +1,5 @@
 # pip install pyopenssl
+# pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu117
 # python main_ocr.py --keywords ../sample_data/keywords.txt --gpu
 
 import easyocr
