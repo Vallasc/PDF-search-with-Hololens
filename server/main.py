@@ -51,33 +51,25 @@ app = Flask(__name__)
 @app.route('/pdfs')
 def get_pdfs():
     keyword = request.args.get('keyword')
+    fav = request.args.get('favFilter') is not None 
+    moreOcc = request.args.get('moreOcc') is not None
+    mostView = request.args.get('mostViewed') is not None
+    limit = 30 if request.args.get('limit') is None else request.args.get('limit')
     if keyword is not None:
         keyword = PdfUtils.sanitize_word(keyword)
         result_pdfs = db.get_keyword(keyword)["pdfs"].values()
     else:
         result_pdfs = db.get_all_pdfs()
-    out_pdfs = []
-    print(result_pdfs)
     try:
-        for pdf in result_pdfs:
-            tmp_pdf = deepcopy(pdf)
-            for page in tmp_pdf['pages']:
-                with open(page['path'], encoding = 'utf-8') as f:
-                    data = json.load(f)
-                    page['thumbnail'] = data['thumbnail']
-                    page['thumbnailWidth'] = data['width']
-                    page['thumbnailHeight'] = data['height']
-                del page['path']
-                try:
-                    del page['keywords']
-                except:
-                    pass
-            del tmp_pdf['path']
-            out_pdfs.append(tmp_pdf)
-            if "isFav" not in pdf:
-                _pdf = db.get_pdf(pdf["_id"])
-                pdf["isFav"] = _pdf["isFav"]
-                pdf["numVisit"] = _pdf["numVisit"]
+        out_pdfs = PdfUtils.hydratate_pdfs(result_pdfs, db)
+        if moreOcc:
+            out_pdfs.sort( lambda e : e["numOccKeyword"])
+        elif mostView:
+            out_pdfs.sort( lambda e : e["numVisit"])
+        if fav:
+            out_pdfs = filter(out_pdfs, lambda e : e["isFav"] == True)
+        out_pdfs = out_pdfs[0:limit]
+        print(out_pdfs)
         return {
             'pdfs': out_pdfs
         }, 200

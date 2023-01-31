@@ -137,3 +137,29 @@ class PdfUtils:
         pdf["numVisit"] = 0
         pdfs[pdf["_id"]] = pdf
 
+    @staticmethod
+    def hydratate_pdfs(pdfs, db):
+        out_pdfs = []
+        for pdf in pdfs:
+            tmp_pdf = deepcopy(pdf)
+            for page in tmp_pdf['pages']:
+                with open(page['path'], encoding = 'utf-8') as f:
+                    data = json.load(f)
+                    page['thumbnail'] = data['thumbnail']
+                    page['thumbnailWidth'] = data['width']
+                    page['thumbnailHeight'] = data['height']
+                del page['path']
+                try:
+                    del page['keywords']
+                except:
+                    pass
+            del tmp_pdf['path']
+            out_pdfs.append(tmp_pdf)
+            if "isFav" not in pdf:
+                _pdf = db.get_pdf(pdf["_id"])
+                pdf["isFav"] = _pdf["isFav"]
+                pdf["numVisit"] = _pdf["numVisit"]
+            if "numOccKeyword" not in pdf:
+                pdf["numOccKeyword"] = 0
+        return out_pdfs
+
