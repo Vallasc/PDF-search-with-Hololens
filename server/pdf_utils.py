@@ -154,12 +154,12 @@ class PdfUtils:
                 except:
                     pass
             del tmp_pdf['path']
-            out_pdfs.append(tmp_pdf)
-            if "isFav" not in pdf:
+            if "isFav" not in tmp_pdf:
                 _pdf = db.get_pdf(pdf["_id"])
-                pdf["isFav"] = _pdf["isFav"]
-                pdf["numVisit"] = _pdf["numVisit"]
-            if "numOccKeyword" not in pdf:
-                pdf["numOccKeyword"] = 0
+                tmp_pdf["isFav"] = _pdf["isFav"]
+                tmp_pdf["numVisit"] = _pdf["numVisit"]
+            if "numOccKeyword" not in tmp_pdf:
+                tmp_pdf["numOccKeyword"] = 0
+            out_pdfs.append(tmp_pdf)
         return out_pdfs
 
