@@ -1,5 +1,5 @@
 # pip install pyopenssl
-# python main_ocr.py --keywords ../sample_data/keywords.txt
+# python main_ocr.py --keywords ../sample_data/keywords.txt --gpu
 
 import easyocr
 import argparse
