@@ -41,8 +41,8 @@ db.drop_db()
 db.insert_many_pdfs(pdfs_out.values())
 db.insert_many_keywords(words_out.values())
 
-print(json.dumps(db.get_all_pdfs(), indent=4, sort_keys=True))
-print(json.dumps(db.get_all_keywords(), indent=4, sort_keys=True))
+# print(json.dumps(db.get_all_pdfs(), indent=4, sort_keys=True))
+# print(json.dumps(db.get_all_keywords(), indent=4, sort_keys=True))
 
 
 app = Flask(__name__)
@@ -50,10 +50,10 @@ app = Flask(__name__)
 @app.route('/pdfs')
 def get_pdfs():
     keyword = request.args.get('keyword')
-    fav = True if request.args.get('favFilter') == "True" is not None else False
-    moreOcc = True if request.args.get('moreOcc') == "True" is not None else False
-    mostView = True if request.args.get('mostViewed') == "True" is not None else False
-    limit = int(request.args.get('limit')) if request.args.get('limit') is not None else 30
+    fav = True if request.args.get('favFilter') == "True" != None else False
+    moreOcc = True if request.args.get('moreOcc') == "True" != None else False
+    mostView = True if request.args.get('mostViewed') == "True" != None else False
+    limit = int(request.args.get('limit')) if request.args.get('limit') != None else 30
     if keyword is not None:
         keyword = PdfUtils.sanitize_word(keyword)
         result_pdfs = db.get_keyword(keyword)["pdfs"].values()
@@ -65,8 +65,6 @@ def get_pdfs():
             out_pdfs.sort( key =  lambda e : e["numOccKeyword"])
         elif mostView:
             out_pdfs.sort( key = lambda e : e["numVisit"])
-        print(request.args.get('favFilter'))
-        print(bool(request.args.get('favFilter')))
         if fav:
             out_pdfs = list(filter(lambda e : e["isFav"], out_pdfs))
         out_pdfs = out_pdfs[0:limit]
