@@ -98,10 +98,7 @@ def get_page(pdf, page):
         filtered = [p for p in k_db['pdfs'][pdf]['pages'] if p["number"] == int(page)]
         if len(filtered) == 1: 
             return PdfUtils.select_keyword_on_image(filtered[0])
-        else:
-            return "{}", 404 
-    else:
-        return send_from_directory(f"{args.output}/{pdf}", f"page-{page}.json")
+    return send_from_directory(f"{args.output}/{pdf}", f"page-{page}.json")
 
 
 @app.route('/favs/<string:pdf>', methods = ['POST'])
