@@ -107,7 +107,7 @@ def post_favourites(pdf):
     if value is not None:
         try:
             _pdf = db.get_pdf(pdf)
-            _pdf["isFav"] = bool(value)
+            _pdf["isFav"] = value.lower() in ("True", "true", "TRUE", "1")
             db.update_pdf(_pdf)
             return "{}", 200
         except Exception as e:
