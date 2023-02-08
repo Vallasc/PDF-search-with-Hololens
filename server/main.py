@@ -62,9 +62,9 @@ def get_pdfs():
     try:
         out_pdfs = PdfUtils.hydratate_pdfs(result_pdfs, db)
         if moreOcc:
-            out_pdfs.sort( key =  lambda e : e["numOccKeyword"])
+            out_pdfs.sort( key =  lambda e : e["numOccKeyword"], reverse=True)
         elif mostView:
-            out_pdfs.sort( key = lambda e : e["numVisit"])
+            out_pdfs.sort( key = lambda e : e["numVisit"], reverse=True)
         if fav:
             out_pdfs = list(filter(lambda e : e["isFav"], out_pdfs))
         out_pdfs = out_pdfs[0:limit]
