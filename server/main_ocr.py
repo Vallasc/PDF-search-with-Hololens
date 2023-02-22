@@ -51,7 +51,7 @@ def do_upload():
         sanitized = PdfUtils.sanitize_word(word[1])
         for keyword in keywords:
             dist = editdistance.eval(sanitized, keyword)
-            if dist < 3 and word[2] > 0.6 and keyword not in out_keywords:
+            if dist < 2 and word[2] > 0.7 and keyword not in out_keywords:
                 out_keywords.append(keyword)
     print(out_keywords)
     return {
